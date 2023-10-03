@@ -8,4 +8,4 @@
 
 ![Зображення проекту](url_до_зображення.jpg)
 ![Зображення проекту](url_до_зображення.jpg)
-![Відео про проект](url_до_відео)
+![Відео про проект](https://github.com/Wiziks/VGGI/blob/PA1/PA1/images/chrome_pwKxuxqDkn.gif)
