@@ -12,7 +12,7 @@ let b = 1
 let c = 1
 let maxX = 10
 let deltaX = 0.1
-let deltaAngle = 2
+let deltaAngle = 10
 
 let lightColor = [1.0, 1.0, 1.0]
 let lightDirection = [0.0, -1.0, 0.0]
@@ -20,6 +20,10 @@ let lightIntensity = 0.4
 
 let ambientColor = [0.0, 0.0, 0.0]
 let shininess = 1
+
+let lightOscillationLength = 1;
+let animationDirection = 0;
+let animationSpeed = 0.05;
 
 let canvas
 let gl
@@ -266,6 +270,9 @@ function drawModel(shaderProgram, vertexBuffer, facesBuffer, faces, normalsBuffe
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, facesBuffer);
     gl.drawElements(gl.TRIANGLES, faces.length, gl.UNSIGNED_SHORT, 0);
+
+    if (document.getElementById('animation').checked)
+        drawBox([0, 10, 0], [0.1, lightOscillationLength * 10, 0.1], [1.0, 1.0, 0.0], PROJMATRIX, MODELMATRIX, VIEWMATRIX);
 }
 
 function processEvents(setup) {
@@ -308,7 +315,7 @@ function processEvents(setup) {
     const sliderPrefix = 'slider';
     const sliderValuePrefix = 'slider-value';
 
-    for (let i = 1; i <= 23; i++) {
+    for (let i = 1; i <= 25; i++) {
         const sliderId = `${sliderPrefix}${i}`;
         const sliderValueId = `${sliderValuePrefix}${i}`;
 
@@ -321,8 +328,10 @@ function processEvents(setup) {
             slider.addEventListener('input', (e) => {
                 const sliderVal = parseFloat(e.target.value).toFixed(1);
                 sliderValue.textContent = sliderVal;
-                if (i < 4)
+                if (i < 4) {
                     scale[i - 1] = sliderVal;
+                    lightOscillationLength = Math.sqrt(scale[0] * scale[0] + scale[1] * scale[1] + scale[2] * scale[2])
+                }
                 else if (i < 7)
                     figureColor[i - 4] = sliderVal;
                 else if (i == 7)
@@ -347,10 +356,20 @@ function processEvents(setup) {
                     lightIntensity = Number(sliderVal);
                 else if (i == 23)
                     shininess = Number(sliderVal);
+                else if (i == 24) {
+                    let value = Number(sliderVal)
+                    sliderValue.textContent = value == 0 ? "X" : value == 1 ? "Y" : "Z"
+                    animationDirection = value
+                }
+                else if (i == 25) {
+                    const val = parseFloat(e.target.value).toFixed(2);
+                    sliderValue.textContent = val;
+                    animationSpeed = Number(val)
+                }
+
                 setup();
             });
         }
-
     }
 }
 
@@ -363,6 +382,25 @@ onload = function () {
     setup();
     processEvents(setup);
 
+    let time = 0;
+
+    function render() {
+        if (document.getElementById('animation').checked) {
+            const index = animationDirection + 13;
+            const slider = document.getElementById('slider' + index);
+            const sliderValue = document.getElementById('slider-value' + index);
+            const value = Math.round(Math.sin(time) * 100) / 100
+            slider.value = value
+            sliderValue.textContent = value
+            lightDirection[0] = value
+            time += animationSpeed
+            setup();
+        }
+
+        requestAnimationFrame(render)
+    }
+
+    requestAnimationFrame(render)
 
     document.getElementById("switch-button").addEventListener("click", function () {
         var div1 = document.getElementById("figure-settings");

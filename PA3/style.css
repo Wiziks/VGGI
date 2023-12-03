@@ -114,3 +114,47 @@ input[type=range]::-webkit-slider-thumb {
     transform: translate(0.05em, 0.05em);
     box-shadow: 0.05em 0.05em;
 }
+
+.clear {
+    clear: both;
+}
+
+.checkBox {
+    margin-top: 15px;
+    margin-left: 15px;
+    display: block;
+    cursor: pointer;
+    width: 15px;
+    height: 15px;
+    border: 3px solid rgba(255, 255, 255, 0);
+    border-radius: 7px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0px 0px 0px 2px #FBCA1F;
+}
+
+.checkBox div {
+    width: 60px;
+    height: 60px;
+    background-color: #FBCA1F;
+    top: -52px;
+    left: -52px;
+    position: absolute;
+    transform: rotateZ(45deg);
+    z-index: 100;
+}
+
+.checkBox input[type=checkbox]:checked+div {
+    left: -10px;
+    top: -10px;
+}
+
+.checkBox input[type=checkbox] {
+    position: absolute;
+    left: 50px;
+    visibility: hidden;
+}
+
+.transition {
+    transition: 300ms ease;
+}
