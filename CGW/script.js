@@ -10,28 +10,31 @@ let scale = [1.0, 1.0, 1.0]
 let figureColor = [1.0, 1.0, 1.0]
 let b = 1
 let c = 1
-let maxX = 10
-let deltaX = 0.1
-let deltaAngle = 10
+let maxX = 9
+let deltaX = 0.3
+let deltaAngle = 12
 
 let lightColor = [1.0, 1.0, 1.0]
-let lightDirection = [0.0, -1.0, 0.0]
+let lightDirection = [0.0, -1.0, 1.0]
 let lightIntensity = 0.4
 
 let ambientColor = [0.0, 0.0, 0.0]
 let shininess = 1
 
-let lightOscillationLength = 1;
-let animationDirection = 0;
-let animationSpeed = 0.05;
-
 let canvas
 let gl
+let tex;
+let textures = []
+let currentTexture = 0
+let centerUV = [0, 0]
+let scaleUV = 1
+let boxPosition = [0, 0, 0]
 
 const vsSource = `
     attribute vec3 a_Position;
     attribute vec3 a_Color;
     attribute vec3 a_Normal;
+    attribute vec2 a_TextureCoord;
 
     uniform mat4 u_Pmatrix;
     uniform mat4 u_Mmatrix;
@@ -47,6 +50,7 @@ const vsSource = `
     varying vec3 v_Color;
     varying vec3 v_Normal;
     varying vec3 v_Position;
+    varying vec2 v_TextureCoord;
 
     void main(void) {
         vec4 transformedNormal = u_Mmatrix * vec4(a_Normal, 0.0);
@@ -67,18 +71,24 @@ const vsSource = `
 
         v_Color = ambient + diffuse + specular;
         gl_Position = u_Pmatrix * u_Vmatrix * worldPosition;
+        v_TextureCoord = a_TextureCoord;
     }`;
 
 const fsSource = `
-    precision mediump float;
+    precision highp float;
     varying vec3 v_Color;
+    varying vec2 v_TextureCoord;
+    uniform sampler2D u_Sampler;
+
     void main(void) {
-        gl_FragColor = vec4(v_Color,1.0);
+        vec4 textureColor = texture2D(u_Sampler, v_TextureCoord);
+        gl_FragColor = textureColor * vec4(v_Color, 1.0);
     }`;
 
 function calculateVertices() {
     const vertices = [];
     const originSinusoid = [];
+    const uv = [];
 
     for (let x = 0; x <= maxX; x += deltaX) {
         const y = b * Math.sin(c * x);
@@ -93,12 +103,37 @@ function calculateVertices() {
             const rotPoint = rotatePointAroundY(x, y, z, angle);
             vertices.push(rotPoint[0], rotPoint[1], rotPoint[2]);
             vertices.push(figureColor[0], figureColor[1], figureColor[2]);
+
+            const u = (originSinusoid[index] / maxX) / (scaleUV);
+            const v = angle / 360 / scaleUV;
+
+            if (Math.round(u * 100) / 100 == centerUV[0] && Math.round(v * 100) / 100 == centerUV[1]) {
+                boxPosition = [rotPoint[0], rotPoint[1], rotPoint[2]]
+            }
+
+            uv.push(Math.min(Math.max(u, 0), 1), Math.min(Math.max(v, 0), 1));
         }
     }
 
     const [faces, averagedNormals] = generateFaces(vertices, vertices.length / 3.5, 360 / deltaAngle);
 
-    return [vertices, faces, averagedNormals];
+    var result = [];
+    var i = 0;
+    var j = 0;
+
+    while (i < vertices.length || j < uv.length) {
+        for (var k = 0; k < 6 && i < vertices.length; k++) {
+            result.push(vertices[i]);
+            i++;
+        }
+
+        for (var l = 0; l < 2 && j < uv.length; l++) {
+            result.push(uv[j]);
+            j++;
+        }
+    }
+
+    return [result, faces, averagedNormals];
 }
 
 function generateFaces(vertices, numGroups, segmenst) {
@@ -208,6 +243,8 @@ function initProgram(vertices, faces, averagedNormals) {
 }
 
 function drawModel(shaderProgram, vertexBuffer, facesBuffer, faces, normalsBuffer) {
+    gl.useProgram(shaderProgram);
+
     var u_Pmatrix = gl.getUniformLocation(shaderProgram, 'u_Pmatrix');
     var u_Mmatrix = gl.getUniformLocation(shaderProgram, 'u_Mmatrix');
     var u_Vmatrix = gl.getUniformLocation(shaderProgram, 'u_Vmatrix');
@@ -251,10 +288,12 @@ function drawModel(shaderProgram, vertexBuffer, facesBuffer, faces, normalsBuffe
     const a_Position = gl.getAttribLocation(shaderProgram, 'a_Position');
     const a_Color = gl.getAttribLocation(shaderProgram, 'a_Color');
     const a_Normal = gl.getAttribLocation(shaderProgram, 'a_Normal');
+    const a_TextureCoord = gl.getAttribLocation(shaderProgram, 'a_TextureCoord');
 
     gl.enableVertexAttribArray(a_Position);
     gl.enableVertexAttribArray(a_Color);
     gl.enableVertexAttribArray(a_Normal);
+    gl.enableVertexAttribArray(a_TextureCoord);
 
     gl.clearColor(0.06, 0.02, 0.3, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -262,20 +301,49 @@ function drawModel(shaderProgram, vertexBuffer, facesBuffer, faces, normalsBuffe
     gl.bindBuffer(gl.ARRAY_BUFFER, normalsBuffer);
     gl.vertexAttribPointer(a_Normal, 3, gl.FLOAT, false, 0, 0);
 
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, tex.webGLTexture);
+
     const byteCount = 4;
 
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-    gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, byteCount * (3 + 3), 0);
-    gl.vertexAttribPointer(a_Color, 3, gl.FLOAT, false, byteCount * (3 + 3), 3 * byteCount);
+    gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, byteCount * (3 + 3 + 2), 0);
+    gl.vertexAttribPointer(a_Color, 3, gl.FLOAT, false, byteCount * (3 + 3 + 2), 3 * byteCount);
+    gl.vertexAttribPointer(a_TextureCoord, 2, gl.FLOAT, false, byteCount * (3 + 3 + 2), byteCount * (3 + 3));
+
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.enable(gl.DEPTH_TEST);
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, facesBuffer);
     gl.drawElements(gl.TRIANGLES, faces.length, gl.UNSIGNED_SHORT, 0);
 
-    if (document.getElementById('animation').checked)
-        drawBox([0, 10, 0], [0.1, lightOscillationLength * 10, 0.1], [1.0, 1.0, 0.0], PROJMATRIX, MODELMATRIX, VIEWMATRIX);
+    drawBox(boxPosition, [0.1, 0.1, 0.1], [1.0, 0.0, 0.0], PROJMATRIX, MODELMATRIX, VIEWMATRIX)
 }
 
 function processEvents(setup) {
+    document.addEventListener('keydown', (event) => {
+        const keyName = event.key;
+
+        switch (keyName) {
+            case '1':
+                currentTexture = 0;
+                setup();
+                break;
+            case '2':
+                currentTexture = 1;
+                setup();
+                break;
+            case '3':
+                currentTexture = 2;
+                setup();
+                break;
+            default:
+                break;
+        }
+    });
+
     canvas.addEventListener('mousedown', (e) => {
         isSwiping = true;
         startX = e.clientX;
@@ -315,7 +383,7 @@ function processEvents(setup) {
     const sliderPrefix = 'slider';
     const sliderValuePrefix = 'slider-value';
 
-    for (let i = 1; i <= 25; i++) {
+    for (let i = 1; i <= 26; i++) {
         const sliderId = `${sliderPrefix}${i}`;
         const sliderValueId = `${sliderValuePrefix}${i}`;
 
@@ -328,10 +396,8 @@ function processEvents(setup) {
             slider.addEventListener('input', (e) => {
                 const sliderVal = parseFloat(e.target.value).toFixed(1);
                 sliderValue.textContent = sliderVal;
-                if (i < 4) {
+                if (i < 4)
                     scale[i - 1] = sliderVal;
-                    lightOscillationLength = Math.sqrt(scale[0] * scale[0] + scale[1] * scale[1] + scale[2] * scale[2])
-                }
                 else if (i < 7)
                     figureColor[i - 4] = sliderVal;
                 else if (i == 7)
@@ -356,51 +422,44 @@ function processEvents(setup) {
                     lightIntensity = Number(sliderVal);
                 else if (i == 23)
                     shininess = Number(sliderVal);
-                else if (i == 24) {
-                    let value = Number(sliderVal)
-                    sliderValue.textContent = value == 0 ? "X" : value == 1 ? "Y" : "Z"
-                    animationDirection = value
-                }
-                else if (i == 25) {
-                    const val = parseFloat(e.target.value).toFixed(2);
-                    sliderValue.textContent = val;
-                    animationSpeed = Number(val)
-                }
-
+                else if (i < 26)
+                    centerUV[i - 24] = Number(sliderVal);
+                else if (i == 26)
+                    scaleUV = Number(sliderVal);
                 setup();
             });
         }
+
     }
 }
 
 onload = function () {
+    textures = [wood, stone, lava]
     setup = function () {
         const [vertices, faces, averagedNormals] = calculateVertices();
+
         const [shaderProgram, vertexBuffer, facesBuffer, normalsBuffer] = initProgram(vertices, faces, averagedNormals);
-        drawModel(shaderProgram, vertexBuffer, facesBuffer, faces, normalsBuffer);
+
+        tex = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, tex);
+        var image = new Image();
+
+        image.src = textures[currentTexture];
+        image.onload = () => {
+            shaderProgram.samplerUniform = gl.getUniformLocation(shaderProgram, "u_Sampler");
+            gl.uniform1i(shaderProgram.samplerUniform, 0);
+
+            gl.bindTexture(gl.TEXTURE_2D, tex);
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+
+            drawModel(shaderProgram, vertexBuffer, facesBuffer, faces, normalsBuffer);
+        }
     }
     setup();
     processEvents(setup);
-
-    let time = 0;
-
-    function render() {
-        if (document.getElementById('animation').checked) {
-            const index = animationDirection + 13;
-            const slider = document.getElementById('slider' + index);
-            const sliderValue = document.getElementById('slider-value' + index);
-            const value = Math.round(Math.sin(time) * 100) / 100
-            slider.value = value
-            sliderValue.textContent = value
-            lightDirection[0] = value
-            time += animationSpeed
-            setup();
-        }
-
-        requestAnimationFrame(render)
-    }
-
-    requestAnimationFrame(render)
 
     document.getElementById("switch-button").addEventListener("click", function () {
         var div1 = document.getElementById("figure-settings");

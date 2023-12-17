@@ -115,17 +115,6 @@ function drawBox(center, size, color, PROJMATRIX, MODELMATRIX, VIEWMATRIX) {
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, TRIANGLE_FACES);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(triangle_face), gl.STATIC_DRAW);
 
-    let angle = calculateAngle([0, -1, 0], lightDirection)
-    if (lightDirection[0] > 0) {
-        angle *= -1
-    }
-    if (animationDirection === 0)
-        mat4.rotateX(MODELMATRIX, angle)
-    else if (animationDirection === 1)
-        mat4.rotateY(MODELMATRIX, angle)
-    if (animationDirection === 2)
-        mat4.rotateZ(MODELMATRIX, angle)
-
     gl.uniformMatrix4fv(u_Pmatrix, false, PROJMATRIX);
     gl.uniformMatrix4fv(u_Mmatrix, false, MODELMATRIX);
     gl.uniformMatrix4fv(u_Vmatrix, false, VIEWMATRIX);
@@ -135,13 +124,4 @@ function drawBox(center, size, color, PROJMATRIX, MODELMATRIX, VIEWMATRIX) {
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, TRIANGLE_FACES);
     gl.drawElements(gl.TRIANGLES, triangle_face.length, gl.UNSIGNED_SHORT, 0);
-}
-
-function calculateAngle(vector, point) {
-    var pointVector = [point[0], point[1], point[2]];
-    var dotProduct = vector[0] * pointVector[0] + vector[1] * pointVector[1] + vector[2] * pointVector[2];
-    var magnitudeVector = Math.sqrt(vector[0] ** 2 + vector[1] ** 2 + vector[2] ** 2);
-    var magnitudePointVector = Math.sqrt(pointVector[0] ** 2 + pointVector[1] ** 2 + pointVector[2] ** 2);
-    var angleRadians = Math.acos(dotProduct / (magnitudeVector * magnitudePointVector));
-    return angleRadians;
 }
