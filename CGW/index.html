@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Поверхня обертання загальної синусоїди</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="canvas-container">
+        <canvas id="webgl-canvas"></canvas>
+    </div>
+    <div class="panel" id="figure-settings">
+        <h1>Поверхня обертання загальної синусоїди</h1>
+        <h2>Розмір</h2>
+        <div class="panel-element">
+            <p>X</p>
+            <input type="range" class="slider" id="slider1" min="0.1" max="10" value="1" step="0.1">
+            <p id="slider-value1">1.0</p>
+        </div>
+        <div class="panel-element">
+            <p>Y</p>
+            <input type="range" class="slider" id="slider2" min="0.1" max="10" value="1" step="0.1">
+            <p id="slider-value2">1.0</p>
+        </div>
+        <div class="panel-element">
+            <p>Z</p>
+            <input type="range" class="slider" id="slider3" min="0.1" max="10" value="1" step="0.1">
+            <p id="slider-value3">1.0</p>
+        </div>
+        <h2>Колір</h2>
+        <div class="panel-element">
+            <p>R</p>
+            <input type="range" class="slider" id="slider4" min="0" max="1" value="1" step="0.1">
+            <p id="slider-value4">1.0</p>
+        </div>
+        <div class="panel-element">
+            <p>G</p>
+            <input type="range" class="slider" id="slider5" min="0" max="1" value="1" step="0.1">
+            <p id="slider-value5">1.0</p>
+        </div>
+        <div class="panel-element">
+            <p>B</p>
+            <input type="range" class="slider" id="slider6" min="0" max="1" value="1" step="0.1">
+            <p id="slider-value6">1.0</p>
+        </div>
+        <h2>Параметри</h2>
+        <div class="panel-element">
+            <p>B</p>
+            <input type="range" class="slider" id="slider7" min="0.1" max="10" value="1" step="0.1">
+            <p id="slider-value7">1.0</p>
+        </div>
+        <div class="panel-element">
+            <p>C</p>
+            <input type="range" class="slider" id="slider8" min="0.1" max="10" value="1" step="0.1">
+            <p id="slider-value8">1.0</p>
+        </div>
+        <div class="panel-element">
+            <p>Максимальний X</p>
+            <input type="range" class="slider" id="slider9" min="5" max="50" value="10" step="1">
+            <p id="slider-value9">10.0</p>
+        </div>
+        <div class="panel-element">
+            <p>Крок для X</p>
+            <input type="range" class="slider" id="slider10" min="0.1" max="1" value="0.1" step="0.11">
+            <p id="slider-value10">0.1</p>
+        </div>
+        <div class="panel-element">
+            <p>Крок для кута</p>
+            <input type="range" class="slider" id="slider11" min="1" max="72" value="2" step="1">
+            <p id="slider-value11">10.0</p>
+        </div>
+        <h2>Налаштування</h2>
+        <div class="panel-element">
+            <p>Чутливість миші</p>
+            <input type="range" class="slider" id="slider12" min="1" max="100" value="25" step="1">
+            <p id="slider-value12">25.0</p>
+        </div>
+    </div>
+    <div class="panel" id="light-settings" style="display: none;">
+        <h1>Спрямоване світло</h1>
+        <h2>Напрям</h2>
+        <div class="panel-element">
+            <p>X</p>
+            <input type="range" class="slider" id="slider13" min="-1" max="1" value="0" step="0.1">
+            <p id="slider-value13">0.0</p>
+        </div>
+        <div class="panel-element">
+            <p>Y</p>
+            <input type="range" class="slider" id="slider14" min="-1" max="1" value="-1" step="0.1">
+            <p id="slider-value14">-1.0</p>
+        </div>
+        <div class="panel-element">
+            <p>Z</p>
+            <input type="range" class="slider" id="slider15" min="-1" max="1" value="0" step="0.1">
+            <p id="slider-value15">0.0</p>
+        </div>
+        <h2>Колір світла</h2>
+        <div class="panel-element">
+            <p>R</p>
+            <input type="range" class="slider" id="slider16" min="0" max="1" value="1" step="0.1">
+            <p id="slider-value16">1.0</p>
+        </div>
+        <div class="panel-element">
+            <p>G</p>
+            <input type="range" class="slider" id="slider17" min="0" max="1" value="1" step="0.1">
+            <p id="slider-value17">1.0</p>
+        </div>
+        <div class="panel-element">
+            <p>B</p>
+            <input type="range" class="slider" id="slider18" min="0" max="1" value="1" step="0.1">
+            <p id="slider-value18">1.0</p>
+        </div>
+        <h2>Навколишнє освітлення</h2>
+        <div class="panel-element">
+            <p>R</p>
+            <input type="range" class="slider" id="slider19" min="0" max="1" value="0" step="0.1">
+            <p id="slider-value19">0.0</p>
+        </div>
+        <div class="panel-element">
+            <p>G</p>
+            <input type="range" class="slider" id="slider20" min="0" max="1" value="0" step="0.1">
+            <p id="slider-value20">0.0</p>
+        </div>
+        <div class="panel-element">
+            <p>B</p>
+            <input type="range" class="slider" id="slider21" min="0" max="1" value="0" step="0.1">
+            <p id="slider-value21">0.0</p>
+        </div>
+        <h2>Налаштування</h2>
+        <div class="panel-element">
+            <p>Інтенсивність</p>
+            <input type="range" class="slider" id="slider22" min="0.1" max="2" value="0.4" step="0.1">
+            <p id="slider-value22">0.4</p>
+        </div>
+        <div class="panel-element">
+            <p>Блиск</p>
+            <input type="range" class="slider" id="slider23" min="0.1" max="1" value="1" step="0.1">
+            <p id="slider-value23">1</p>
+        </div>
+        <h2>Параметри анімації</h2>
+        <div class="panel-element">
+            <p>Анімація</p>
+            <div class="content">
+                <label class="checkBox">
+                    <input id="animation" name="animation" type="checkbox">
+                    <div class="transition"></div>
+                </label>
+            </div>
+        </div>
+        <div class="panel-element">
+            <p>Напрям</p>
+            <input type="range" class="slider" id="slider24" min="0" max="2" value="0" step="1">
+            <p id="slider-value24">X</p>
+        </div>
+        <div class="panel-element">
+            <p>Швидкість</p>
+            <input type="range" class="slider" id="slider25" min="0.01" max="1" value="0.05" step="0.01">
+            <p id="slider-value25">0.05</p>
+        </div>
+    </div>
+    <div class="info-panel">
+        <p>ЛКМ+Свайп - поворот фігури<br><br>Колесо миші - зміна позиції</p>
+    </div>
+    <button class="switch-button" id="switch-button">Світло</button>
+
+    <script src="script.js"></script>
+    <script src="drawbox.js"></script>
+    <script src="glMatrix-0.9.5.js"></script>
+</body>
+
+</html>
